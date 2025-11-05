@@ -105,7 +105,7 @@ model-viewer {
 }
 
 /* ===== hotspot button ===== */
-.hotspot {
+.hotspot{
     background-color: rgba(255, 255, 255, 0.9);
     border: none;
     border-radius: 50%;

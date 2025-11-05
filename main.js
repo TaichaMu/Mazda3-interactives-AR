@@ -15,26 +15,51 @@ document.addEventListener("DOMContentLoaded", () => {
     const infoText = document.getElementById("info-text");
     const arButton = document.querySelector('#ar-button');
 
+    const navLinks = document.querySelectorAll("nav a");
+
     // ===== 初期状態 =====
     hotspots.forEach(btn => btn.style.display = "none");
     infoPanel.style.display = "none";
     hotspotOverlay.classList.add("hidden");
+
+    let currentMode = "normal"; // 初期モード
+    const models = {
+        normal: {
+            src: "./assets/mazda3.glb",
+            hotspots: document.querySelectorAll(".hotspot-main") // normal用hotspot
+        },
+        safety: {
+            src: "./assets/mazda3safety.glb",
+            hotspots: document.querySelectorAll(".hotspot-safety") // safety用hotspot
+        }
+    };
+
+    // ===== モデル切替関数 =====
+    function switchModel(mode) {
+        if (mode === currentMode) return;
+        currentMode = mode;
+
+        // モデル切り替え
+        modelViewer.setAttribute("src", models[mode].src);
+
+        // すべてのホットスポット非表示
+        hotspots.forEach(h => (h.style.display = "none"));
+
+        // 該当モードのホットスポットのみ表示
+        models[mode].hotspots.forEach(h => (h.style.display = "block"));
+    }
 
     // ===== 「詳しく見る」ボタン =====
     ctaBtn.addEventListener("click", () => {
         introOverlay.classList.add("fade-out");
         setTimeout(() => {
             introOverlay.style.display = "none";
-
-            // info-panel表示
             infoPanel.style.display = "block";
-
-            // 初回ホットスポット表示更新
             updateHotspots();
-        }, 600); // CSS transitionに合わせる
+        }, 600);
     });
 
-    // ===== ホットスポットクリックで詳細オーバーレイ表示 =====
+    // ===== ホットスポットクリック =====
     hotspots.forEach(btn => {
         btn.addEventListener("click", () => {
             overlayTitle.textContent = "詳細情報";
@@ -43,7 +68,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 
-    // ===== 詳細オーバーレイ閉じるボタン =====
+    // ===== 詳細オーバーレイ閉じる =====
     overlayClose.addEventListener("click", () => {
         hotspotOverlay.classList.add("hidden");
     });
@@ -72,7 +97,7 @@ document.addEventListener("DOMContentLoaded", () => {
     function updateInfoPanel() {
         if (infoPanel.style.display === "none") return;
         let thetaDeg = modelViewer.getCameraOrbit().theta * (180 / Math.PI);
-        thetaDeg = ((thetaDeg % 360) + 360) % 360; // 0～360°正規化
+        thetaDeg = ((thetaDeg % 360) + 360) % 360;
 
         for (const view of views) {
             const [start, end] = view.range;
@@ -86,12 +111,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // ===== ホットスポットの表示/非表示更新 =====
     function updateHotspots() {
-        if (infoPanel.style.display === "none") return; // 「詳しく見る」前は非表示
+        if (infoPanel.style.display === "none") return;
 
         let thetaDeg = modelViewer.getCameraOrbit().theta * (180 / Math.PI);
         thetaDeg = ((thetaDeg % 360) + 360) % 360;
 
-        hotspots.forEach(btn => {
+        models[currentMode].hotspots.forEach(btn => {
             let minAngle = parseFloat(btn.dataset.minAngle);
             let maxAngle = parseFloat(btn.dataset.maxAngle);
 
@@ -112,8 +137,25 @@ document.addEventListener("DOMContentLoaded", () => {
         updateHotspots();
     }, 50);
 
+    // ===== ナビバー切り替え =====
+    navLinks.forEach(link => {
+        link.addEventListener("click", (e) => {
+            e.preventDefault();
+            const text = e.target.textContent.trim();
+
+            if (text.includes("Overview")) {
+                switchModel("normal");
+            } else if (text.includes("安全装備")) {
+                switchModel("safety");
+            }
+        });
+    });
+
     // ===== ARボタン =====
     arButton.addEventListener('click', () => {
         modelViewer.activateAR();
     });
+
+    // ===== 初期状態 =====
+    switchModel("normal");
 });
